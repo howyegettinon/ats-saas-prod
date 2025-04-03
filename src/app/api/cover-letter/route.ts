@@ -40,29 +40,33 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    // Use same pattern as CV analysis - first save, then deduct credit
-    const coverLetter = await prisma.analysis.create({
-      data: {
-        userId: user.id,
-        resume: resume,
-        result: result,
-      },
-    })
-
-    // Deduct credit if not unlimited (-1)
-    if (user.usageCredits !== -1) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { usageCredits: { decrement: 1 } }
-      })
-    }
+    // Save result and deduct credit in a transaction
+    await prisma.$transaction([
+      // Save analysis
+      prisma.analysis.create({
+        data: {
+          userId: user.id,
+          resume: resume,
+          result: result,
+          type: 'cover-letter', // Add type to distinguish
+          jobDescription: jobDescription // Add job description
+        },
+      }),
+      // Deduct credit if not unlimited
+      ...(user.usageCredits !== -1 ? [
+        prisma.user.update({
+          where: { id: user.id },
+          data: { usageCredits: { decrement: 1 } }
+        })
+      ] : [])
+    ])
 
     return NextResponse.json({ result })
 
   } catch (error: any) {
     console.error('Cover letter generation error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: error.message || 'Failed to generate cover letter' },
       { status: 500 }
     )
   }
