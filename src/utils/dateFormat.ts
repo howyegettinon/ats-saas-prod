@@ -12,7 +12,7 @@ export const formatDate = (date: string | Date, includeTime: boolean = true) => 
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
-    }).replace(',', '') // Removes comma between date and time
+    }).replace(',', '')
   }
   
   return d.toLocaleDateString('en-IE', dateOptions)
