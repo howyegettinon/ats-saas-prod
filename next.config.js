@@ -16,9 +16,6 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   productionBrowserSourceMaps: false,
-  experimental: {
-    optimizeCss: true
-  },
   headers: () => [
     {
       source: '/(.*)',
