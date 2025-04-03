@@ -6,21 +6,19 @@ import { signOut } from 'next-auth/react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight, Menu, X } from 'lucide-react'
+import { formatDate } from '@/utils/dateFormat'
 
 const navigation = [
   { name: 'Overview', href: '/dashboard' },
   { name: 'CV Analyzer', href: '/dashboard/cv-analyzer' },
   { name: 'Cover Letter', href: '/dashboard/cover-letter' },
-  { name: 'History', href: '/dashboard/history' }, // Added History link
+  { name: 'History', href: '/history' },
 ]
 
 export default function DashboardContent() {
   const { data: session, status } = useSession()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const currentTime = new Date().toLocaleString('en-US', {
-    timeZone: 'UTC',
-    hour12: false,
-  })
+  const currentTime = formatDate(new Date())
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
@@ -85,12 +83,13 @@ export default function DashboardContent() {
             <div className="md:hidden">
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="text-gray-600 hover:text-blue-600 transition-colors"
+                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
               >
+                <span className="sr-only">Open main menu</span>
                 {isMobileMenuOpen ? (
-                  <X className="h-6 w-6" />
+                  <X className="block h-6 w-6" aria-hidden="true" />
                 ) : (
-                  <Menu className="h-6 w-6" />
+                  <Menu className="block h-6 w-6" aria-hidden="true" />
                 )}
               </button>
             </div>
@@ -98,126 +97,95 @@ export default function DashboardContent() {
         </div>
 
         {/* Mobile menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden">
-            <div className="px-2 pt-2 pb-3 space-y-1 bg-white/90 border-b border-gray-100">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
-              <div className="px-3 py-3 border-t border-gray-100 mt-2">
-                {session?.user?.image && (
-                  <div className="flex items-center space-x-3 mb-3">
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden ring-2 ring-white">
-                      <Image
-                        src={session.user.image}
-                        alt={session.user.name || 'User'}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 32px) 100vw, 32px"
-                        priority
-                        unoptimized // Added to help with Google profile images
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-gray-700">
-                        {session?.user?.name}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {session?.user?.email}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                <button
-                  onClick={() => signOut()}
-                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
-                >
-                  Sign out
-                  <ChevronRight className="h-4 w-4" />
-                </button>
+        <div className={`${isMobileMenuOpen ? 'block' : 'hidden'} md:hidden`}>
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition-colors"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+          <div className="pt-4 pb-3 border-t border-gray-200">
+            <div className="px-4 flex items-center">
+              {session?.user?.image && (
+                <div className="relative flex-shrink-0 w-10 h-10 rounded-full overflow-hidden ring-2 ring-white">
+                  <Image
+                    src={session.user.image}
+                    alt={session.user.name || 'User'}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 40px) 100vw, 40px"
+                    priority
+                    unoptimized
+                  />
+                </div>
+              )}
+              <div className="ml-3">
+                <div className="text-base font-medium text-gray-800">
+                  {session?.user?.name}
+                </div>
+                <div className="text-sm font-medium text-gray-500">
+                  {session?.user?.email}
+                </div>
               </div>
             </div>
+            <div className="mt-3 px-2">
+              <button
+                onClick={() => signOut()}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                Sign out
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        )}
+        </div>
       </nav>
 
-      {/* Main Content */}
-      <main className="pt-24 max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white/80 backdrop-blur-md shadow-xl rounded-2xl overflow-hidden border border-gray-100">
-          {/* Welcome Section */}
-          <div className="px-8 py-6 bg-gradient-to-r from-blue-600 to-purple-600">
-            <h2 className="text-2xl font-bold text-white">
-              Welcome back, {session?.user?.name}!
-            </h2>
-            <p className="mt-1 text-blue-100">
-              Your workspace is ready • Last login: {currentTime}
-            </p>
+      {/* Main content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Activity Card */}
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+            <div className="text-sm text-gray-500">
+              Last updated: {currentTime}
+            </div>
           </div>
 
-          {/* Account Details */}
-          <div className="px-8 py-6">
-            <h3 className="text-lg font-semibold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Account Details
-            </h3>
-            <dl className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                <dd className="mt-1 text-sm text-gray-900">{session?.user?.email}</dd>
-              </div>
-              <div className="bg-white/50 backdrop-blur-sm rounded-xl p-4 border border-gray-100">
-                <dt className="text-sm font-medium text-gray-500">Name</dt>
-                <dd className="mt-1 text-sm text-gray-900">{session?.user?.name}</dd>
-              </div>
-            </dl>
+          {/* Credits Card */}
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage Credits</h2>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-blue-600">10</span>
+              <span className="text-sm text-gray-500">Remaining</span>
+            </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="px-8 py-6 border-t border-gray-100">
-            <h3 className="text-lg font-semibold text-gray-900 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Quick Actions
-            </h3>
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Quick Actions Card */}
+          <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+            <div className="space-y-3">
               <Link
                 href="/dashboard/cv-analyzer"
-                className="group relative bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all"
+                className="block w-full bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors"
               >
-                <h4 className="text-base font-semibold text-gray-900">CV Analysis</h4>
-                <p className="mt-1 text-sm text-gray-500">
-                  Get instant feedback on your CV
-                </p>
-                <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                Analyze Resume
               </Link>
               <Link
                 href="/dashboard/cover-letter"
-                className="group relative bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all"
+                className="block w-full bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors"
               >
-                <h4 className="text-base font-semibold text-gray-900">Cover Letter</h4>
-                <p className="mt-1 text-sm text-gray-500">
-                  Generate tailored cover letters
-                </p>
-                <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
-              </Link>
-              <Link
-                href="/dashboard/history"
-                className="group relative bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-gray-100 hover:shadow-lg transition-all"
-              >
-                <h4 className="text-base font-semibold text-gray-900">History</h4>
-                <p className="mt-1 text-sm text-gray-500">
-                  View your past analyses
-                </p>
-                <ChevronRight className="absolute right-6 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-hover:text-blue-600 transition-colors" />
+                Generate Cover Letter
               </Link>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
