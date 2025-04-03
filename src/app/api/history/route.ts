@@ -11,7 +11,7 @@ export async function GET(request: Request) {
     }
 
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
+    const type = searchParams.get('type') || 'analysis'
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '10')
     const skip = (page - 1) * limit
@@ -25,59 +25,37 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (type === 'analysis') {
-      const [analyses, total] = await Promise.all([
-        prisma.analysis.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-          select: {
-            id: true,
-            resume: true,
-            result: true,
-            createdAt: true,
-          }
-        }),
-        prisma.analysis.count({
-          where: { userId: user.id }
-        })
-      ])
-
-      return NextResponse.json({
-        items: analyses,
-        total,
-        pages: Math.ceil(total / limit)
+    const [items, total] = await Promise.all([
+      prisma.analysis.findMany({
+        where: { 
+          userId: user.id,
+          type: type === 'cover-letter' ? 'cover-letter' : 'analysis'
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        select: {
+          id: true,
+          resume: true,
+          result: true,
+          jobDescription: true,
+          type: true,
+          createdAt: true,
+        }
+      }),
+      prisma.analysis.count({
+        where: { 
+          userId: user.id,
+          type: type === 'cover-letter' ? 'cover-letter' : 'analysis'
+        }
       })
+    ])
 
-    } else if (type === 'cover-letter') {
-      const [letters, total] = await Promise.all([
-        prisma.coverLetter.findMany({
-          where: { userId: user.id },
-          orderBy: { createdAt: 'desc' },
-          skip,
-          take: limit,
-          select: {
-            id: true,
-            resume: true,
-            jobDescription: true,
-            coverLetter: true,
-            createdAt: true,
-          }
-        }),
-        prisma.coverLetter.count({
-          where: { userId: user.id }
-        })
-      ])
-
-      return NextResponse.json({
-        items: letters,
-        total,
-        pages: Math.ceil(total / limit)
-      })
-    }
-
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
+    return NextResponse.json({
+      items,
+      total,
+      pages: Math.ceil(total / limit)
+    })
 
   } catch (error) {
     console.error('Error fetching history:', error)
@@ -96,6 +74,14 @@ export async function POST(request: Request) {
     }
 
     const data = await request.json()
+    
+    if (!data.type || !['analysis', 'cover-letter'].includes(data.type)) {
+      return NextResponse.json(
+        { error: 'Invalid type parameter' },
+        { status: 400 }
+      )
+    }
+
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true }
@@ -105,25 +91,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (data.type === 'cover-letter') {
-      const coverLetter = await prisma.coverLetter.create({
-        data: {
-          userId: user.id,
-          resume: data.resume,
-          jobDescription: data.jobDescription,
-          coverLetter: data.coverLetter,
-        },
-      })
-      return NextResponse.json(coverLetter)
-    }
-
     const analysis = await prisma.analysis.create({
       data: {
         userId: user.id,
         resume: data.resume,
         result: data.result,
+        type: data.type,
+        jobDescription: data.type === 'cover-letter' ? data.jobDescription : null,
       },
     })
+
     return NextResponse.json(analysis)
 
   } catch (error) {
@@ -133,4 +110,16 @@ export async function POST(request: Request) {
       { status: 500 }
     )
   }
+}
+
+// Add OPTIONS handler for CORS if needed
+export async function OPTIONS(request: Request) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  })
 }
