@@ -26,22 +26,23 @@ export async function GET(request: Request) {
     }
 
     if (type === 'analysis') {
-      const analyses = await prisma.analysis.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          resume: true,
-          result: true,
-          createdAt: true,
-        }
-      })
-
-      const total = await prisma.analysis.count({
-        where: { userId: user.id }
-      })
+      const [analyses, total] = await Promise.all([
+        prisma.analysis.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            resume: true,
+            result: true,
+            createdAt: true,
+          }
+        }),
+        prisma.analysis.count({
+          where: { userId: user.id }
+        })
+      ])
 
       return NextResponse.json({
         items: analyses,
@@ -50,35 +51,33 @@ export async function GET(request: Request) {
       })
 
     } else if (type === 'cover-letter') {
-      const coverLetters = await prisma.coverLetter.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          resume: true,
-          jobDescription: true,
-          coverLetter: true,
-          createdAt: true,
-        }
-      })
-
-      const total = await prisma.coverLetter.count({
-        where: { userId: user.id }
-      })
+      const [letters, total] = await Promise.all([
+        prisma.coverLetter.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            resume: true,
+            jobDescription: true,
+            coverLetter: true,
+            createdAt: true,
+          }
+        }),
+        prisma.coverLetter.count({
+          where: { userId: user.id }
+        })
+      ])
 
       return NextResponse.json({
-        items: coverLetters,
+        items: letters,
         total,
         pages: Math.ceil(total / limit)
       })
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid type parameter' },
-        { status: 400 }
-      )
     }
+
+    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
 
   } catch (error) {
     console.error('Error fetching history:', error)
@@ -116,21 +115,16 @@ export async function POST(request: Request) {
         },
       })
       return NextResponse.json(coverLetter)
-    } else if (data.type === 'analysis') {
-      const analysis = await prisma.analysis.create({
-        data: {
-          userId: user.id,
-          resume: data.resume,
-          result: data.result,
-        },
-      })
-      return NextResponse.json(analysis)
-    } else {
-      return NextResponse.json(
-        { error: 'Invalid type parameter' },
-        { status: 400 }
-      )
     }
+
+    const analysis = await prisma.analysis.create({
+      data: {
+        userId: user.id,
+        resume: data.resume,
+        result: data.result,
+      },
+    })
+    return NextResponse.json(analysis)
 
   } catch (error) {
     console.error('Error saving to history:', error)
