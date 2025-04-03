@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-gradient-to-br from-gray-50 to-blue-50/30;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-gradient-brand text-white px-8 py-4 rounded-xl text-lg font-medium hover:shadow-xl transition-all;
+  }
+}
