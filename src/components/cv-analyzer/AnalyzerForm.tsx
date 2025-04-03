@@ -69,12 +69,12 @@ export default function AnalyzerForm() {
           
           <button
             type="submit"
-            disabled={loading}
-            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            disabled={loading || !resume.trim()}
+            className="mt-6 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:shadow-none"
           >
             {loading ? (
               <>
-                <LoadingSpinner />
+                <LoadingSpinner size="small" />
                 <span>Analyzing...</span>
               </>
             ) : (
