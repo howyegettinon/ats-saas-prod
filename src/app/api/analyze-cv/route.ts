@@ -14,19 +14,22 @@ export async function POST(req: Request) {
       )
     }
 
-    // Check and use credit
-    const creditResponse = await fetch('/api/subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'use' })
+    // Check credits directly with Prisma
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true, usageCredits: true }
     })
 
-    if (!creditResponse.ok) {
-      const error = await creditResponse.json()
-      return NextResponse.json(
-        { error: error.error, redirect: error.redirect },
-        { status: creditResponse.status }
-      )
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    // Check if user has credits
+    if (user.usageCredits !== -1 && user.usageCredits <= 0) {
+      return NextResponse.json({ 
+        error: 'No credits remaining',
+        redirect: '/pricing'
+      }, { status: 403 })
     }
 
     const { resume } = await req.json()
@@ -39,14 +42,24 @@ export async function POST(req: Request) {
 
     const result = await analyzeResume(resume)
 
-    // Save to history
-    await prisma.analysis.create({
-      data: {
-        userId: session.user.id,
-        resume,
-        result,
-      }
-    })
+    // Use transaction to ensure both operations succeed
+    await prisma.$transaction([
+      // Create analysis record
+      prisma.analysis.create({
+        data: {
+          userId: user.id,
+          resume,
+          result,
+        }
+      }),
+      // Deduct credit if not unlimited
+      ...(user.usageCredits !== -1 ? [
+        prisma.user.update({
+          where: { id: user.id },
+          data: { usageCredits: { decrement: 1 } }
+        })
+      ] : [])
+    ])
 
     return NextResponse.json({ result })
 
