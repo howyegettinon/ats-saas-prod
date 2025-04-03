@@ -12,20 +12,33 @@ export default function CreditDisplay() {
   useEffect(() => {
     const fetchCredits = async () => {
       try {
-        const response = await fetch('/api/subscription')
-        if (!response.ok) throw new Error('Failed to fetch credits')
+        // Use absolute URL to avoid path issues
+        const response = await fetch('/api/subscription', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        })
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch credits: ${response.statusText}`)
+        }
+        
         const data = await response.json()
         setCredits(data.credits)
       } catch (err) {
-        setError('Error loading credits')
-        console.error(err)
+        console.error('Error fetching credits:', err)
+        setError(err instanceof Error ? err.message : 'Error loading credits')
       }
     }
 
     fetchCredits()
   }, [])
 
-  if (error) return null
+  if (error) {
+    console.error('CreditDisplay error:', error)
+    return null
+  }
 
   return (
     <div className="flex items-center justify-between">
