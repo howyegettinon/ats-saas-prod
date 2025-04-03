@@ -3,7 +3,7 @@
     "version": "0.1.0",
     "scripts": {
         "dev": "next dev",
-        "build": "prisma generate && prisma migrate deploy && next build",
+        "build": "prisma generate && prisma migrate deploy && next build && cp -r .next/static .next/standalone/.next/",
         "start": "node .next/standalone/server.js",
         "prisma:generate": "prisma generate",
         "prisma:migrate": "prisma migrate deploy"
