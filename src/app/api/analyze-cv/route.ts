@@ -1,21 +1,35 @@
 import { NextResponse } from 'next/server'
 import { analyzeResume } from '@/lib/cv-analyzer'
 import { getServerSession } from 'next-auth'
+import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const body = await req.json()
-    const { resume, jobDescription } = body
-    
+    // Check and use credit
+    const creditResponse = await fetch('/api/subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'use' })
+    })
+
+    if (!creditResponse.ok) {
+      const error = await creditResponse.json()
+      return NextResponse.json(
+        { error: error.error, redirect: error.redirect },
+        { status: creditResponse.status }
+      )
+    }
+
+    const { resume } = await req.json()
     if (!resume) {
       return NextResponse.json(
         { error: 'Resume text is required' },
@@ -23,21 +37,16 @@ export async function POST(req: Request) {
       )
     }
 
-    const result = await analyzeResume(resume, jobDescription)
-    
+    const result = await analyzeResume(resume)
+
     // Save to history
-    try {
-      await prisma.analysis.create({
-        data: {
-          userId: session.user.id,
-          resume: resume,
-          result: result
-        }
-      })
-    } catch (error) {
-      console.error('Failed to save to history:', error)
-      // Continue even if history save fails
-    }
+    await prisma.analysis.create({
+      data: {
+        userId: session.user.id,
+        resume,
+        result,
+      }
+    })
 
     return NextResponse.json({ result })
 
