@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -6,7 +7,7 @@ const openai = new OpenAI({
 
 export async function generateCoverLetter(jobDescription: string, resume: string) {
   try {
-    const messages = [
+    const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `You are an experienced Irish HR professional writing highly engaging, natural-sounding cover letters for job applicants in Ireland. 
@@ -28,8 +29,8 @@ export async function generateCoverLetter(jobDescription: string, resume: string
     ];
 
     const completion = await openai.chat.completions.create({
-      model: "gpt-4-0125-preview",  // Updated to latest GPT-4 Turbo
-      messages,
+      model: "gpt-4-0125-preview",
+      messages: messages,
       temperature: 0.7,
       max_tokens: 600,
       top_p: 0.9,
