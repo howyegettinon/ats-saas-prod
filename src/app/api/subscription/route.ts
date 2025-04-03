@@ -49,14 +49,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    // If credits are -1, user has unlimited
     if (user.usageCredits === -1) {
       return NextResponse.json({ credits: -1 })
     }
 
+    // Check if user has credits
     if (user.usageCredits <= 0) {
       return NextResponse.json({ error: 'No credits remaining' }, { status: 403 })
     }
 
+    // Deduct credit
     const updatedUser = await prisma.user.update({
       where: { email: session.user.email },
       data: { usageCredits: { decrement: 1 } }
