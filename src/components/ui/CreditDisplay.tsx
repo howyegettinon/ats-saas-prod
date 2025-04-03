@@ -25,7 +25,7 @@ export default function CreditDisplay() {
     fetchCredits()
   }, [])
 
-  if (error) return null // Don't show anything if there's an error
+  if (error) return null
 
   return (
     <div className="flex items-center justify-between">
