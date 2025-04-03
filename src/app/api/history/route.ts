@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
-import { authOptions } from '@/lib/auth' // Updated import path
+import { authOptions } from '@/lib/auth'
 
 export async function GET(req: Request) {
   try {
@@ -15,24 +15,28 @@ export async function GET(req: Request) {
       include: {
         analyses: {
           orderBy: { createdAt: 'desc' },
-          take: 10,
+          take: 20, // Increased from 10 to show more history
         },
         coverLetters: {
           orderBy: { createdAt: 'desc' },
-          take: 10,
+          take: 20, // Increased from 10 to show more history
         },
       },
     })
 
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
     return NextResponse.json({
-      analyses: user?.analyses || [],
-      coverLetters: user?.coverLetters || [],
+      analyses: user.analyses,
+      coverLetters: user.coverLetters,
     })
 
   } catch (error: any) {
     console.error('History error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Failed to fetch history' },
       { status: 500 }
     )
   }
@@ -84,7 +88,7 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Save history error:', error)
     return NextResponse.json(
-      { error: error.message },
+      { error: 'Failed to save to history' },
       { status: 500 }
     )
   }
