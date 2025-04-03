@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
-import { generateCoverLetter } from '@/lib/cover-letter-generator'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
+import { generateCoverLetter } from '@/lib/cover-letter-generator'
 
 export async function POST(req: Request) {
   try {
@@ -44,7 +44,7 @@ export async function POST(req: Request) {
 
     // Use transaction to ensure both operations succeed
     await prisma.$transaction([
-      // Save to history
+      // Create cover letter record
       prisma.coverLetter.create({
         data: {
           userId: user.id,
