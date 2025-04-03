@@ -1,4 +1,14 @@
-export default function LoadingSpinner({ size = 'default' }: { size?: 'small' | 'default' | 'large' }) {
+import { type HTMLAttributes } from 'react'
+
+interface LoadingSpinnerProps extends HTMLAttributes<HTMLDivElement> {
+  size?: 'small' | 'default' | 'large'
+}
+
+export default function LoadingSpinner({ 
+  size = 'default', 
+  className = '',
+  ...props 
+}: LoadingSpinnerProps) {
   const sizeClasses = {
     small: 'h-4 w-4 border-2',
     default: 'h-6 w-6 border-2',
@@ -6,7 +16,10 @@ export default function LoadingSpinner({ size = 'default' }: { size?: 'small' | 
   }
 
   return (
-    <div className="inline-flex items-center justify-center">
+    <div 
+      className={`inline-flex items-center justify-center ${className}`}
+      {...props}
+    >
       <div 
         className={`animate-spin rounded-full border-blue-600 border-r-transparent ${sizeClasses[size]}`}
         role="status"
