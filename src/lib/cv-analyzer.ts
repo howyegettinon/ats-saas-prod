@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { ChatCompletionMessageParam } from 'openai/resources/chat/completions'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -6,7 +7,7 @@ const openai = new OpenAI({
 
 export async function analyzeResume(resumeText: string, jobDescription?: string) {
   try {
-    const messages = [
+    const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",
         content: `You are an experienced Irish HR professional and ATS expert. 
@@ -43,7 +44,7 @@ export async function analyzeResume(resumeText: string, jobDescription?: string)
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4-0125-preview",
-      messages,
+      messages: messages,
       temperature: 0.7,
       max_tokens: 1200,
       top_p: 0.9,
