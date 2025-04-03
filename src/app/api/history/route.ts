@@ -59,7 +59,7 @@ export async function GET(request: Request) {
           id: true,
           resume: true,
           jobDescription: true,
-          coverLetter: true, // Changed from result to coverLetter
+          coverLetter: true,
           createdAt: true,
         }
       })
@@ -73,9 +73,12 @@ export async function GET(request: Request) {
         total,
         pages: Math.ceil(total / limit)
       })
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid type parameter' },
+        { status: 400 }
+      )
     }
-
-    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
 
   } catch (error) {
     console.error('Error fetching history:', error)
@@ -107,22 +110,27 @@ export async function POST(request: Request) {
       const coverLetter = await prisma.coverLetter.create({
         data: {
           userId: user.id,
-          jobDescription: data.jobDescription,
           resume: data.resume,
-          coverLetter: data.coverLetter, // Changed from result to coverLetter
+          jobDescription: data.jobDescription,
+          coverLetter: data.coverLetter,
         },
       })
       return NextResponse.json(coverLetter)
+    } else if (data.type === 'analysis') {
+      const analysis = await prisma.analysis.create({
+        data: {
+          userId: user.id,
+          resume: data.resume,
+          result: data.result,
+        },
+      })
+      return NextResponse.json(analysis)
+    } else {
+      return NextResponse.json(
+        { error: 'Invalid type parameter' },
+        { status: 400 }
+      )
     }
-
-    const analysis = await prisma.analysis.create({
-      data: {
-        userId: user.id,
-        resume: data.resume,
-        result: data.result,
-      },
-    })
-    return NextResponse.json(analysis)
 
   } catch (error) {
     console.error('Error saving to history:', error)
