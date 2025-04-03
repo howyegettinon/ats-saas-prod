@@ -21,7 +21,7 @@ export default function LoadingSpinner({
       {...props}
     >
       <div 
-        className={`animate-spin rounded-full border-blue-600 border-r-transparent ${sizeClasses[size]}`}
+        className={`animate-spin rounded-full border-white border-r-transparent ${sizeClasses[size]}`}
         role="status"
         aria-label="Loading"
       />
