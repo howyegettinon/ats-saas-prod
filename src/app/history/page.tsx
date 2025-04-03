@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'  // Add useEffect import
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { formatDate } from '@/utils/dateFormat'
@@ -21,7 +21,8 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  useState(() => {
+  // Changed from useState to useEffect
+  useEffect(() => {
     fetchHistory()
   }, [activeTab])
 
