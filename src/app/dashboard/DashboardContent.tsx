@@ -7,6 +7,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronRight, Menu, X } from 'lucide-react'
 import { formatDate } from '@/utils/dateFormat'
+import CreditDisplay from '@/components/ui/CreditDisplay'
 
 const navigation = [
   { name: 'Overview', href: '/dashboard' },
@@ -160,10 +161,7 @@ export default function DashboardContent() {
           {/* Credits Card */}
           <div className="bg-white/80 backdrop-blur-md rounded-2xl p-6 shadow-xl border border-gray-100">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Usage Credits</h2>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold text-blue-600">10</span>
-              <span className="text-sm text-gray-500">Remaining</span>
-            </div>
+            <CreditDisplay />
           </div>
 
           {/* Quick Actions Card */}
