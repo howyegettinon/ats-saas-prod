@@ -14,7 +14,6 @@ export async function POST(req: Request) {
       )
     }
 
-    // Check credits directly with Prisma
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
       select: { id: true, usageCredits: true }
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Check if user has credits
     if (user.usageCredits !== -1 && user.usageCredits <= 0) {
       return NextResponse.json({ 
         error: 'No credits remaining',
@@ -42,25 +40,22 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    // Use transaction to ensure both operations succeed
-    await prisma.$transaction([
-      // Create cover letter record
-      prisma.coverLetter.create({
-        data: {
-          userId: user.id,
-          resume,
-          jobDescription,
-          coverLetter: result,
-        }
-      }),
-      // Deduct credit if not unlimited
-      ...(user.usageCredits !== -1 ? [
-        prisma.user.update({
-          where: { id: user.id },
-          data: { usageCredits: { decrement: 1 } }
-        })
-      ] : [])
-    ])
+    // Use same pattern as CV analysis - first save, then deduct credit
+    const coverLetter = await prisma.analysis.create({
+      data: {
+        userId: user.id,
+        resume: resume,
+        result: result,
+      },
+    })
+
+    // Deduct credit if not unlimited (-1)
+    if (user.usageCredits !== -1) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { usageCredits: { decrement: 1 } }
+      })
+    }
 
     return NextResponse.json({ result })
 
