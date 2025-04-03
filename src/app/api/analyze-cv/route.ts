@@ -1,35 +1,20 @@
 import { NextResponse } from 'next/server'
-import OpenAI from 'openai'
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-async function analyzeResume(resumeText: string) {
-  try {
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [{
-        role: "system",
-        content: "Analyze this resume for Applicant Tracking System compatibility. Provide a structured analysis with these sections:\n1. Overall Score (0-100)\n2. Keyword Analysis\n3. Formatting Issues\n4. Content Gaps\n5. Specific Improvements"
-      }, {
-        role: "user",
-        content: resumeText.substring(0, 3000)
-      }],
-      temperature: 0.7
-    })
-
-    return completion.choices[0].message.content
-  } catch (error: any) {
-    console.error('OpenAI Error:', error)
-    throw new Error('Resume analysis failed: ' + error.message)
-  }
-}
+import { analyzeResume } from '@/lib/cv-analyzer'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 
 export async function POST(req: Request) {
   try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
     const body = await req.json()
-    const { resume } = body
+    const { resume, jobDescription } = body
     
     if (!resume) {
       return NextResponse.json(
@@ -38,7 +23,22 @@ export async function POST(req: Request) {
       )
     }
 
-    const result = await analyzeResume(resume)
+    const result = await analyzeResume(resume, jobDescription)
+    
+    // Save to history
+    try {
+      await prisma.analysis.create({
+        data: {
+          userId: session.user.id,
+          resume: resume,
+          result: result
+        }
+      })
+    } catch (error) {
+      console.error('Failed to save to history:', error)
+      // Continue even if history save fails
+    }
+
     return NextResponse.json({ result })
 
   } catch (error: any) {
