@@ -40,22 +40,34 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    await prisma.$transaction([
-      prisma.coverLetter.create({
-        data: {
-          userId: user.id,
-          resume: resume,
-          jobDescription: jobDescription,
-          coverLetter: result  // Keep as coverLetter to match database
-        },
-      }),
-      ...(user.usageCredits !== -1 ? [
-        prisma.user.update({
-          where: { id: user.id },
-          data: { usageCredits: { decrement: 1 } }
+    console.log('Starting transaction with user:', user.id) // Add logging
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // Create cover letter first
+            await tx.coverLetter.create({
+                data: {
+                    userId: user.id,
+                    resume: resume,
+                    jobDescription: jobDescription,
+                    coverLetter: result
+                }
+            })
+
+            // Then update credits if needed
+            if (user.usageCredits !== -1) {
+                await tx.user.update({
+                    where: { id: user.id },
+                    data: { usageCredits: { decrement: 1 } }
+                })
+            }
         })
-      ] : [])
-    ])
+    } catch (txError) {
+        console.error('Transaction failed:', txError) // Add error logging
+        throw txError
+    }
+
+    console.log('Transaction completed successfully') // Add logging
 
     return NextResponse.json({ result })
 
