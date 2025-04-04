@@ -40,28 +40,32 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    // COPY EXACTLY HOW ANALYSIS WORKS
-    await prisma.coverLetter.create({
-      data: {
-        userId: user.id,
-        resume,
-        jobDescription,
-        coverLetter: result
-      }
-    })
-
-    if (user.usageCredits !== -1) {
-      await prisma.user.update({
-        where: { id: user.id },
+    // Use transaction to ensure atomicity
+    const [coverLetter] = await prisma.$transaction([
+      prisma.coverLetter.create({
         data: {
-          usageCredits: {
-            decrement: 1
-          }
+          userId: user.id,
+          resume,
+          jobDescription,
+          coverLetter: result
         }
-      })
-    }
+      }),
+      ...(user.usageCredits !== -1 ? [
+        prisma.user.update({
+          where: { id: user.id },
+          data: {
+            usageCredits: {
+              decrement: 1
+            }
+          }
+        })
+      ] : [])
+    ])
 
-    return NextResponse.json(result)
+    return NextResponse.json({ 
+      result: result, // Match frontend expectation
+      coverLetter: coverLetter 
+    })
 
   } catch (error: any) {
     console.error('Error:', error)
