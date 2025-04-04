@@ -62,7 +62,7 @@ export async function GET(request: Request) {
             id: true,
             resume: true,
             jobDescription: true,
-            result: true,  // Changed from coverLetter to result
+            coverLetter: true,  // Keep as coverLetter to match database
             createdAt: true,
           }
         }),
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
           userId: user.id,
           resume: data.resume,
           jobDescription: data.jobDescription,
-          result: data.result  // Changed from coverLetter to result
+          coverLetter: data.result  // Keep as coverLetter to match database
         },
       })
       return NextResponse.json(coverLetter)
