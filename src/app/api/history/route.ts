@@ -25,37 +25,60 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    const [items, total] = await Promise.all([
-      prisma.analysis.findMany({
-        where: { 
-          userId: user.id,
-          type: type === 'cover-letter' ? 'cover-letter' : 'analysis'
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limit,
-        select: {
-          id: true,
-          resume: true,
-          result: true,
-          jobDescription: true,
-          type: true,
-          createdAt: true,
-        }
-      }),
-      prisma.analysis.count({
-        where: { 
-          userId: user.id,
-          type: type === 'cover-letter' ? 'cover-letter' : 'analysis'
-        }
-      })
-    ])
+    if (type === 'analysis') {
+      const [items, total] = await Promise.all([
+        prisma.analysis.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            resume: true,
+            result: true,
+            createdAt: true,
+          }
+        }),
+        prisma.analysis.count({
+          where: { userId: user.id }
+        })
+      ])
 
-    return NextResponse.json({
-      items,
-      total,
-      pages: Math.ceil(total / limit)
-    })
+      return NextResponse.json({
+        items,
+        total,
+        pages: Math.ceil(total / limit)
+      })
+    }
+
+    if (type === 'cover-letter') {
+      const [items, total] = await Promise.all([
+        prisma.coverLetter.findMany({
+          where: { userId: user.id },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+          select: {
+            id: true,
+            resume: true,
+            jobDescription: true,
+            coverLetter: true,
+            createdAt: true,
+          }
+        }),
+        prisma.coverLetter.count({
+          where: { userId: user.id }
+        })
+      ])
+
+      return NextResponse.json({
+        items,
+        total,
+        pages: Math.ceil(total / limit)
+      })
+    }
+
+    return NextResponse.json({ error: 'Invalid type parameter' }, { status: 400 })
 
   } catch (error) {
     console.error('Error fetching history:', error)
@@ -91,16 +114,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
+    if (data.type === 'cover-letter') {
+      const coverLetter = await prisma.coverLetter.create({
+        data: {
+          userId: user.id,
+          resume: data.resume,
+          jobDescription: data.jobDescription,
+          coverLetter: data.result
+        },
+      })
+      return NextResponse.json(coverLetter)
+    }
+
     const analysis = await prisma.analysis.create({
       data: {
         userId: user.id,
         resume: data.resume,
         result: data.result,
-        type: data.type,
-        jobDescription: data.type === 'cover-letter' ? data.jobDescription : null,
       },
     })
-
     return NextResponse.json(analysis)
 
   } catch (error) {
@@ -112,7 +144,6 @@ export async function POST(request: Request) {
   }
 }
 
-// Add OPTIONS handler for CORS if needed
 export async function OPTIONS(request: Request) {
   return new NextResponse(null, {
     status: 204,
