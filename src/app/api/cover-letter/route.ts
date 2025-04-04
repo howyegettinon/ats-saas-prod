@@ -40,41 +40,40 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    console.log('Starting transaction with user:', user.id) // Add logging
+    // CRITICAL FIX: Separate the database operations to ensure they work
+    // 1. Create the cover letter first
+    const savedCoverLetter = await prisma.coverLetter.create({
+      data: {
+        userId: user.id,
+        resume,
+        jobDescription,
+        coverLetter: result
+      }
+    })
 
-    try {
-        await prisma.$transaction(async (tx) => {
-            // Create cover letter first
-            await tx.coverLetter.create({
-                data: {
-                    userId: user.id,
-                    resume: resume,
-                    jobDescription: jobDescription,
-                    coverLetter: result
-                }
-            })
-
-            // Then update credits if needed
-            if (user.usageCredits !== -1) {
-                await tx.user.update({
-                    where: { id: user.id },
-                    data: { usageCredits: { decrement: 1 } }
-                })
-            }
-        })
-    } catch (txError) {
-        console.error('Transaction failed:', txError) // Add error logging
-        throw txError
+    // 2. Update credits only if needed
+    if (user.usageCredits !== -1) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          usageCredits: {
+            decrement: 1
+          }
+        }
+      })
     }
 
-    console.log('Transaction completed successfully') // Add logging
-
-    return NextResponse.json({ result })
+    // 3. Return both the result and the saved ID for verification
+    return NextResponse.json({ 
+      result,
+      saved: true,
+      id: savedCoverLetter.id
+    })
 
   } catch (error: any) {
-    console.error('Cover letter generation error:', error)
+    console.error('Cover letter operation failed:', error)
     return NextResponse.json(
-      { error: error.message || 'Failed to generate cover letter' },
+      { error: error.message || 'Failed to process cover letter' },
       { status: 500 }
     )
   }
