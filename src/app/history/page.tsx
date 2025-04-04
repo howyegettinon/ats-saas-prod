@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'  // Add useEffect import
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { formatDate } from '@/utils/dateFormat'
@@ -21,7 +21,6 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Changed from useState to useEffect
   useEffect(() => {
     fetchHistory()
   }, [activeTab])
@@ -118,7 +117,7 @@ export default function HistoryPage() {
                     <p className="text-gray-600 line-clamp-3">
                       {activeTab === 'analysis'
                         ? item.result?.substring(0, 200)
-                        : item.coverLetter?.substring(0, 200)}
+                        : (item.coverLetter || item.result)?.substring(0, 200)}
                       ...
                     </p>
                   </div>
