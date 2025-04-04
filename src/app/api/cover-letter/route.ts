@@ -46,7 +46,7 @@ export async function POST(req: Request) {
           userId: user.id,
           resume: resume,
           jobDescription: jobDescription,
-          coverLetter: result
+          result: result  // Changed from coverLetter to result
         },
       }),
       ...(user.usageCredits !== -1 ? [
