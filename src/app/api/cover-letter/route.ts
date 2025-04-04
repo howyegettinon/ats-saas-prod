@@ -40,19 +40,15 @@ export async function POST(req: Request) {
 
     const result = await generateCoverLetter(resume, jobDescription)
 
-    // Save result and deduct credit in a transaction
     await prisma.$transaction([
-      // Save analysis
-      prisma.analysis.create({
+      prisma.coverLetter.create({
         data: {
           userId: user.id,
           resume: resume,
-          result: result,
-          type: 'cover-letter', // Add type to distinguish
-          jobDescription: jobDescription // Add job description
+          jobDescription: jobDescription,
+          coverLetter: result
         },
       }),
-      // Deduct credit if not unlimited
       ...(user.usageCredits !== -1 ? [
         prisma.user.update({
           where: { id: user.id },
